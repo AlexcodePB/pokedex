@@ -1,38 +1,35 @@
-name: CI on Pull Request
+name: CI with Docker
 
-# El workflow se activará cuando haya un pull request
-# dirigido a las ramas 'main', 'dev', o 'feature/nueva-funcionalidad'.
 on:
   pull_request:
     branches:
       - main
       - dev
-      - 'feature/*' # Usas un wildcard para cualquier rama que empiece con 'feature/'
+      - test
 
 jobs:
   build_and_test:
-    # El trabajo se ejecutará en un entorno virtual de Ubuntu.
     runs-on: ubuntu-latest
+
+    services:
+      # 1. Servicio de base de datos: Levanta una base de datos PostgreSQL temporal.
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_DB: test_db
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
 
     steps:
       - name: Checkout Code
-        # Este action descarga tu código del repositorio.
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        # Si tu proyecto usa Node.js, este paso lo configura.
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+      # 2. Construir la imagen de tu aplicación Docker.
+      - name: Build Docker Image
+        run: docker build -t pokemon-app .
 
-      - name: Install dependencies
-        # Instala las dependencias del proyecto.
-        run: npm install
-
-      - name: Build the project
-        # Aquí ejecutas el comando de compilación de tu proyecto.
-        run: npm run build
-
-      - name: Run tests
-        # Y aquí ejecutas los tests.
-        run: npm test
+      # 3. Ejecutar los tests de integración.
+      - name: Run Integration Tests
+        run: docker run --network host --env DATABASE_URL="postgresql://testuser:password@localhost:5432/test_db" pokemon-app npm run test:integration
