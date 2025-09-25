@@ -1,0 +1,38 @@
+name: CI on Pull Request
+
+# El workflow se activará cuando haya un pull request
+# dirigido a las ramas 'main', 'dev', o 'feature/nueva-funcionalidad'.
+on:
+  pull_request:
+    branches:
+      - main
+      - dev
+      - 'feature/*' # Usas un wildcard para cualquier rama que empiece con 'feature/'
+
+jobs:
+  build_and_test:
+    # El trabajo se ejecutará en un entorno virtual de Ubuntu.
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        # Este action descarga tu código del repositorio.
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        # Si tu proyecto usa Node.js, este paso lo configura.
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        # Instala las dependencias del proyecto.
+        run: npm install
+
+      - name: Build the project
+        # Aquí ejecutas el comando de compilación de tu proyecto.
+        run: npm run build
+
+      - name: Run tests
+        # Y aquí ejecutas los tests.
+        run: npm test
